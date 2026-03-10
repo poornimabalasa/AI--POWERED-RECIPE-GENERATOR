@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Recipe Generator - Cook with What You Have!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 30px;
+        }
+
+        .input-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .preferences-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .pref-chip {
+            background: #f0f0f0;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .pref-chip:hover {
+            background: #e0e0e0;
+        }
+
+        .pref-chip.selected {
+            background: #667eea;
+            color: white;
+            border-color: #5a67d8;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            display: none;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .recipes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .recipe-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            border: 1px solid #e0e0e0;
+        }
+
+        .recipe-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+
+        .recipe-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            position: relative;
+        }
+
+        .recipe-image {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .recipe-name {
+            font-size: 1.5em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .recipe-cuisine {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .match-badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #48bb78;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .recipe-body {
+            padding: 20px;
+        }
+
+        .recipe-meta {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .ingredients-list {
+            margin-bottom: 15px;
+        }
+
+        .ingredients-list h4 {
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .ingredient-item {
+            display: inline-block;
+            background: #f0f0f0;
+            padding: 5px 12px;
+            border-radius: 15px;
+            margin: 0 5px 5px 0;
+            font-size: 0.9em;
+        }
+
+        .ingredient-item.have {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .ingredient-item.missing {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .instructions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .instructions h4 {
+            margin-bottom: 10px;
+            color: #555;
+        }
+
+        .instructions p {
+            color: #666;
+            line-height: 1.6;
+            white-space: pre-line;
+        }
+
+        .dietary-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .dietary-tag {
+            background: #e9d8fd;
+            color: #553c9a;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+        }
+
+        .error-message {
+            background: #fed7d7;
+            color: #742a2a;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            background: #f7fafc;
+            border-radius: 10px;
+            color: #718096;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            padding: 20px;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .input-section {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .recipes-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍳 AI Recipe Generator</h1>
+            <div class="subtitle">Turn your ingredients into delicious meals!</div>
+        </header>
+
+        <div class="main-card">
+            <div class="input-section">
+                <div class="input-group">
+                    <label>🥕 What ingredients do you have?</label>
+                    <textarea id="ingredients" placeholder="e.g., chicken, rice, broccoli, garlic, tomatoes, eggs">chicken, rice, broccoli</textarea>
+                    <small style="color: #666; margin-top: 5px; display: block;">Separate ingredients with commas</small>
+                </div>
+
+                <div class="input-group">
+                    <label>🥗 Dietary Preferences (click to select)</label>
+                    <div class="preferences-container">
+                        <span class="pref-chip" data-pref="vegan">🌱 Vegan</span>
+                        <span class="pref-chip" data-pref="vegetarian">🥬 Vegetarian</span>
+                        <span class="pref-chip" data-pref="gluten_free">🌾 Gluten-Free</span>
+                        <span class="pref-chip" data-pref="keto">🥑 Keto</span>
+                        <span class="pref-chip" data-pref="low_carb">🥩 Low-Carb</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button class="btn btn-primary" onclick="generateRecipes()">🔍 Find Recipes</button>
+                <button class="btn btn-secondary" onclick="generateCustom()">✨ Create Custom Recipe</button>
+                <button class="btn btn-secondary" onclick="getRandomRecipe()">🎲 Surprise Me!</button>
+            </div>
+
+            <div class="button-group" style="margin-top: 10px;">
+                <button class="btn btn-secondary" onclick="loadExamples()">📋 Load Examples</button>
+                <button class="btn btn-secondary" onclick="clearAll()">🗑️ Clear All</button>
+            </div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div class="loading" id="loading">
+            <div class="loading-spinner"></div>
+            <p style="color: white;">Cooking up some recipes...</p>
+        </div>
+
+        <!-- Results container -->
+        <div id="results"></div>
+
+        <footer>
+            <p>Made with ❤️ for food lovers | Enter your ingredients and get cooking!</p>
+        </footer>
+    </div>
+
+    <script>
+        // Selected preferences
+        let selectedPrefs = [];
+
+        // Preference chips
+        document.querySelectorAll('.pref-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                const pref = this.dataset.pref;
+                this.classList.toggle('selected');
+                
+                if (this.classList.contains('selected')) {
+                    selectedPrefs.push(pref);
+                } else {
+                    selectedPrefs = selectedPrefs.filter(p => p !== pref);
+                }
+            });
+        });
+
+        // Generate recipes
+        async function generateRecipes() {
+            const ingredients = document.getElementById('ingredients').value;
+            
+            if (!ingredients.trim()) {
+                alert('Please enter some ingredients!');
+                return;
+            }
+
+            showLoading();
+            
+            const ingredientsList = ingredients.split(',').map(i => i.trim());
+            
+            try {
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ingredients: ingredientsList,
+                        preferences: selectedPrefs
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayRecipes(data.recipes);
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                showError('Failed to connect to server');
+            }
+            
+            hideLoading();
+        }
+
+        // Generate custom recipe
+        async function generateCustom() {
+            const ingredients = document.getElementById('ingredients').value;
+            
+            if (!ingredients.trim()) {
+                alert('Please enter some ingredients!');
+                return;
+            }
+
+            showLoading();
+            
+            const ingredientsList = ingredients.split(',').map(i => i.trim());
+            
+            try {
+                const response = await fetch('/api/custom', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ingredients: ingredientsList,
+                        preferences: selectedPrefs
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayRecipes([data.recipe]);
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                showError('Failed to connect to server');
+            }
+            
+            hideLoading();
+        }
+
+        // Get random recipe
+        async function getRandomRecipe() {
+            showLoading();
+            
+            try {
+                const response = await fetch('/api/random');
+                const data = await response.json();
+                
+                if (data.success) {
+                    displayRecipes([data.recipe]);
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                showError('Failed to connect to server');
+            }
+            
+            hideLoading();
+        }
+
+        // Load examples
+        function loadExamples() {
+            document.getElementById('ingredients').value = 'chicken, rice, broccoli, garlic, eggs';
+            
+            // Clear all preferences
+            document.querySelectorAll('.pref-chip.selected').forEach(chip => {
+                chip.classList.remove('selected');
+            });
+            selectedPrefs = [];
+        }
+
+        // Clear all inputs
+        function clearAll() {
+            document.getElementById('ingredients').value = '';
+            document.querySelectorAll('.pref-chip.selected').forEach(chip => {
+                chip.classList.remove('selected');
+            });
+            selectedPrefs = [];
+            document.getElementById('results').innerHTML = '';
+        }
+
+        // Display recipes
+        function displayRecipes(recipes) {
+            const resultsDiv = document.getElementById('results');
+            
+            if (!recipes || recipes.length === 0) {
+                resultsDiv.innerHTML = `
+                    <div class="no-results">
+                        <h3>😕 No recipes found</h3>
+                        <p>Try different ingredients or fewer dietary restrictions!</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '<div class="recipes-grid">';
+            
+            recipes.forEach(recipe => {
+                html += `
+                    <div class="recipe-card">
+                        <div class="recipe-header">
+                            <div class="recipe-image">${recipe.image || '🍳'}</div>
+                            <div class="recipe-name">${recipe.name}</div>
+                            <div class="recipe-cuisine">${recipe.cuisine || 'International'}</div>
+                            ${recipe.match_percentage ? `<div class="match-badge">${recipe.match_percentage}% Match</div>` : ''}
+                        </div>
+                        <div class="recipe-body">
+                            <div class="recipe-meta">
+                                <span>⏱️ ${recipe.prep_time} mins</span>
+                                <span>📋 ${recipe.difficulty}</span>
+                            </div>
+                            
+                            <div class="ingredients-list">
+                                <h4>Ingredients:</h4>
+                                ${recipe.ingredients.map(ing => {
+                                    const isHave = recipe.matching_ingredients && 
+                                        recipe.matching_ingredients.includes(ing.toLowerCase());
+                                    const className = isHave ? 'ingredient-item have' : 'ingredient-item missing';
+                                    return `<span class="${className}">${ing}</span>`;
+                                }).join('')}
+                            </div>
+                            
+                            <div class="instructions">
+                                <h4>Instructions:</h4>
+                                <p>${recipe.instructions}</p>
+                            </div>
+                            
+                            ${recipe.dietary && recipe.dietary.length > 0 ? `
+                                <div class="dietary-tags">
+                                    ${recipe.dietary.map(d => `<span class="dietary-tag">${d.replace('_', ' ')}</span>`).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            ${recipe.missing_ingredients && recipe.missing_ingredients.length > 0 ? `
+                                <p style="color: #e53e3e; margin-top: 10px; font-size: 0.9em;">
+                                    ❌ Missing: ${recipe.missing_ingredients.join(', ')}
+                                </p>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+        }
+
+        // Show error message
+        function showError(message) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="error-message">
+                    <strong>Error:</strong> ${message}
+                </div>
+            `;
+        }
+
+        // Show/hide loading
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Load initial examples on page load
+        window.onload = function() {
+            // Optional: Generate recipes with default example on load
+            // generateRecipes();
+        };
+    </script>
+</body>
+</html>
